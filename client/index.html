@@ -2,7 +2,13 @@
     id="game"
     width="800"
     height="800"
-    style="border:1px solid #000000; font: 32px"
+    style="border:1px solid #000000; font: 32px; z-index: 2; position: absolute; left: 0; top: 0;"
+></canvas>
+<canvas
+    id="gameBackground"
+    width="800"
+    height="800"
+    style="border:1px solid #000000; font: 32px; z-index: 1; position: absolute; left: 0; top: 0;"
 ></canvas>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
@@ -11,12 +17,38 @@
     let tileHeight = 40;
     let mapWidth = 20;
     let mapHeight = 20;
-    let game = document.getElementById("game").getContext("2d");
+    let xPos = 0;
+    let yPos = 0;
+    var dirt = new Image();
+    var diamond = new Image();
+    var player = new Image();
+    dirt.src = "client/img/dirt.jpeg";
+    diamond.src = "client/img/diamond.jpg";
+    player.src = "client/img/players/head1.png";
+    var game = document.getElementById("game").getContext("2d");
+    var gameBackground = document
+        .getElementById("gameBackground")
+        .getContext("2d");
     var socket = io();
     socket.on("newPositions", function(data) {
         game.clearRect(0, 0, 800, 800);
         for (let i = 0; i < data.length; i++) {
-            game.fillText(data[i].number, data[i].x, data[i].y);
+            game.drawImage(player, data[i].x, data[i].y);
+        }
+    });
+    socket.on("map", function(data) {
+        console.log(data);
+        for (let i = 0; i < data.length; i++) {
+            for (let j = 0; j < data[i].length; j++) {
+                if (data[i][j] == 0) {
+                    gameBackground.drawImage(dirt, xPos, yPos);
+                } else {
+                    gameBackground.drawImage(diamond, xPos, yPos);
+                }
+                xPos += 40;
+            }
+            xPos = 0;
+            yPos += 40;
         }
     });
     document.onkeydown = function(event) {
