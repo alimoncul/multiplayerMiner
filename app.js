@@ -10,18 +10,31 @@ app.use("/client", express.static(__dirname + "/client"));
 AppServer.listen(2000);
 
 var gameInstance = {
-    map: generateMap()
+    map: generateMap(),
+    updated: false
 };
+
+function convert2D(arr) {
+    arrRet = [];
+    let range = 0;
+    for (let b = 0; b < 20; b++) {
+        arrRet.push(arr.slice(range, range + 20));
+        range += 20;
+    }
+    return arrRet;
+}
 
 function updateMap(currentMap) {
     tempArr = [];
     for (let i = 0; i < currentMap.length; i++) {
-        tempArr.push(currentMap[i]);
+        for (let k = 0; k < currentMap[i].length; k++) {
+            tempArr.push(currentMap[i][k]);
+        }
     }
     while (tempArr.filter(x => x == 1).length <= 20) {
         tempArr[Math.floor(Math.random() * 400)] = 1;
     }
-    return currentMap;
+    return convert2D(tempArr);
 }
 
 function generateMap() {
@@ -40,6 +53,18 @@ function generateMap() {
     }
     return arrRet;
 }
+var playerNames = [
+    "Rhiven",
+    "Brurin",
+    "Larani",
+    "Gwiviel",
+    "Mirutha",
+    "Uliaviel",
+    "Ethaewyn",
+    "Deania",
+    "Briwyn",
+    "Laron"
+];
 var playerList = {};
 var socketList = {};
 var Player = function(id) {
@@ -47,7 +72,9 @@ var Player = function(id) {
         x: 400,
         y: 400,
         id: id,
-        points: 0,
+        point: 0,
+        name: playerNames[Math.floor(10 * Math.random())],
+        skin: 1,
         number: "" + Math.floor(10 * Math.random()),
         right: false,
         left: false,
@@ -55,24 +82,18 @@ var Player = function(id) {
         down: false,
         speed: 5
     };
-    self.mining = function(CurrentMap) {
-        if (CurrentMap[Math.floor(self.x / 40)][Math.floor(self.y / 40)] == 1) {
-            self.points += 1;
-            CurrentMap[self.x / 40][self.y / 40] = 0;
-            let updatedMap = updateMap(CurrentMap);
-        }
-    };
+
     self.movement = function() {
-        if (self.right) {
+        if (self.right && self.x < 760) {
             self.x += self.speed;
         }
-        if (self.left) {
+        if (self.left && self.x > 0) {
             self.x -= self.speed;
         }
-        if (self.up) {
+        if (self.up && self.y > 0) {
             self.y -= self.speed;
         }
-        if (self.down) {
+        if (self.down && self.y < 760) {
             self.y += self.speed;
         }
     };
@@ -109,8 +130,46 @@ setInterval(function() {
     var package = [];
     for (var i in playerList) {
         var player = playerList[i];
+        var socket = socketList[i];
         player.movement();
-        package.push({ x: player.x, y: player.y, number: player.number });
+        if (
+            gameInstance.map[Math.floor(player.y / 40)][
+                Math.floor(player.x / 40)
+            ] == 1 ||
+            gameInstance.map[Math.ceil(player.y / 40)][
+                Math.ceil(player.x / 40)
+            ] == 1 ||
+            gameInstance.map[Math.floor(player.y / 40)][
+                Math.ceil(player.x / 40)
+            ] == 1 ||
+            gameInstance.map[Math.ceil(player.y / 40)][
+                Math.floor(player.x / 40)
+            ] == 1
+        ) {
+            gameInstance.map[Math.floor(player.y / 40)][
+                Math.floor(player.x / 40)
+            ] = 0;
+            gameInstance.map[Math.ceil(player.y / 40)][
+                Math.ceil(player.x / 40)
+            ] = 0;
+            gameInstance.map[Math.floor(player.y / 40)][
+                Math.ceil(player.x / 40)
+            ] = 0;
+            gameInstance.map[Math.ceil(player.y / 40)][
+                Math.floor(player.x / 40)
+            ] = 0;
+            player.point += 1;
+            gameInstance.map = updateMap(gameInstance.map);
+            socket.emit("updated", gameInstance.map);
+        }
+        package.push({
+            x: player.x,
+            y: player.y,
+            number: player.number,
+            name: player.name,
+            skin: player.skin,
+            point: player.point
+        });
     }
     for (var i in socketList) {
         var socket = socketList[i];

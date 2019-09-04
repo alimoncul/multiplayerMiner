@@ -1,43 +1,128 @@
-<canvas
-    id="game"
-    width="800"
-    height="800"
-    style="border:1px solid #000000; font: 32px; z-index: 2; position: absolute; left: 0; top: 0;"
-></canvas>
-<canvas
-    id="gameBackground"
-    width="800"
-    height="800"
-    style="border:1px solid #000000; font: 32px; z-index: 1; position: absolute; left: 0; top: 0;"
-></canvas>
+<style>
+    /* HIDE RADIO */
+    .hiddenradio [type="radio"] {
+        position: absolute;
+        padding: 20px;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    /* IMAGE STYLES */
+    .hiddenradio [type="radio"] + img {
+        cursor: pointer;
+    }
+
+    /* CHECKED STYLES */
+    .hiddenradio [type="radio"]:checked + img {
+        outline: 3px solid #f00;
+    }
+</style>
+<link
+    rel="stylesheet"
+    href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<div class="container p-4 h-100">
+    <div class="row h-100">
+        <div class="col-sm-3 h-100"
+            ><textarea
+                id="players"
+                class="form-control rounded-0 h-100"
+            ></textarea
+        ></div>
+        <div class="col-sm-1">
+            <div class="column">
+                <div class="hiddenradio">
+                    <div style="padding: 20px">
+                        <label>
+                            <input
+                                type="radio"
+                                name="playerRadio"
+                                value="p1"
+                                checked
+                            />
+                            <img src="client/img/players/head1.png" />
+                        </label>
+                    </div>
+                    <div style="padding: 20px">
+                        <label>
+                            <input type="radio" name="playerRadio" value="p2" />
+                            <img src="client/img/players/head2.png" />
+                        </label>
+                    </div>
+                    <div style="padding: 20px">
+                        <label>
+                            <input type="radio" name="playerRadio" value="p3" />
+                            <img src="client/img/players/head3.png" />
+                        </label>
+                    </div>
+                    <div style="padding: 20px">
+                        <label>
+                            <input type="radio" name="playerRadio" value="p4" />
+                            <img src="client/img/players/head4.png" />
+                        </label>
+                    </div>
+                    <div style="padding: 20px">
+                        <label>
+                            <input type="radio" name="playerRadio" value="p5" />
+                            <img src="client/img/players/head5.png" />
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-8">
+            <canvas
+                id="game"
+                width="800"
+                height="800"
+                style="border:1px solid #000000; font: 32px; z-index: 2; position: absolute; top: 0;"
+            ></canvas>
+            <canvas
+                id="gameBackground"
+                width="800"
+                height="800"
+                style="border:1px solid #000000; font: 32px; z-index: 1; position: absolute; top: 0;"
+            ></canvas>
+        </div>
+    </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
 <script>
-    let tileWidth = 40;
-    let tileHeight = 40;
-    let mapWidth = 20;
-    let mapHeight = 20;
-    let xPos = 0;
-    let yPos = 0;
+    $("input[type=radio][name=playerRadio]").change(function() {
+        if (this.value == "p1") {
+            alert("Allot Thai Gayo Bhai");
+        } else if (this.value == "transfer") {
+            alert("Transfer Thai Gayo");
+        }
+    });
+
     var dirt = new Image();
     var diamond = new Image();
     var player = new Image();
+    player.src = "client/img/players/head1.png";
+    var player2 = new Image();
+    player2.src = "client/img/players/head2.png";
+    var player3 = new Image();
+    player3.src = "client/img/players/head3.png";
+    var player4 = new Image();
+    player4.src = "client/img/players/head4.png";
+    var player5 = new Image();
+    player5.src = "client/img/players/head5.png";
     dirt.src = "client/img/dirt.jpeg";
     diamond.src = "client/img/diamond.jpg";
-    player.src = "client/img/players/head1.png";
     var game = document.getElementById("game").getContext("2d");
     var gameBackground = document
         .getElementById("gameBackground")
         .getContext("2d");
-    var socket = io();
-    socket.on("newPositions", function(data) {
-        game.clearRect(0, 0, 800, 800);
-        for (let i = 0; i < data.length; i++) {
-            game.drawImage(player, data[i].x, data[i].y);
-        }
-    });
-    socket.on("map", function(data) {
-        console.log(data);
+
+    function selectSkin(selectedSkin) {}
+
+    function draw(gameBackground, data) {
+        let xPos = 0;
+        let yPos = 0;
         for (let i = 0; i < data.length; i++) {
             for (let j = 0; j < data[i].length; j++) {
                 if (data[i][j] == 0) {
@@ -50,6 +135,33 @@
             xPos = 0;
             yPos += 40;
         }
+    }
+
+    var socket = io();
+    socket.on("newPositions", function(data) {
+        game.clearRect(0, 0, 800, 800);
+        game.font = "bold 14pt Calibri";
+        game.textAlign = "center";
+        game.fillStyle = "#ffffff";
+        for (let i = 0; i < data.length; i++) {
+            game.drawImage(player, data[i].x, data[i].y);
+            game.fillText(
+                data[i].name +
+                    " skin: " +
+                    data[i].skin +
+                    " point: " +
+                    data[i].point,
+                data[i].x + 20,
+                data[i].y + 55
+            );
+        }
+    });
+    socket.on("map", function(data) {
+        draw(gameBackground, data);
+    });
+    socket.on("updated", function(data) {
+        gameBackground.clearRect(0, 0, 800, 800);
+        draw(gameBackground, data);
     });
     document.onkeydown = function(event) {
         //UpArrow
