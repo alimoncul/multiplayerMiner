@@ -1,17 +1,17 @@
-var express = require("express");
-var app = express();
-var AppServer = require("http").Server(app);
+let express = require("express");
+let randomGen = require("random-name");
+let app = express();
+let AppServer = require("http").Server(app);
 
 app.get("/", function(req, res) {
     res.sendFile(__dirname + "/client/index.html");
 });
 
 app.use("/client", express.static(__dirname + "/client"));
-AppServer.listen(2000);
+AppServer.listen(2000, "0.0.0.0");
 
 var gameInstance = {
-    map: generateMap(),
-    updated: false
+    map: generateMap()
 };
 
 function convert2D(arr) {
@@ -53,34 +53,22 @@ function generateMap() {
     }
     return arrRet;
 }
-var playerNames = [
-    "Rhiven",
-    "Brurin",
-    "Larani",
-    "Gwiviel",
-    "Mirutha",
-    "Uliaviel",
-    "Ethaewyn",
-    "Deania",
-    "Briwyn",
-    "Laron"
-];
-var playerList = {};
-var socketList = {};
-var Player = function(id) {
+
+let playerList = {};
+let socketList = {};
+let Player = function(id) {
     var self = {
         x: 400,
         y: 400,
         id: id,
         point: 0,
-        name: playerNames[Math.floor(10 * Math.random())],
-        skin: 1,
-        number: "" + Math.floor(10 * Math.random()),
+        name: randomGen.first(),
+        skin: 0,
         right: false,
         left: false,
         up: false,
         down: false,
-        speed: 5
+        speed: 8
     };
 
     self.movement = function() {
@@ -100,14 +88,13 @@ var Player = function(id) {
     return self;
 };
 
-var io = require("socket.io")(AppServer, {});
+let io = require("socket.io")(AppServer, {});
 io.sockets.on("connection", function(socket) {
     socket.id = Math.random();
     socketList[socket.id] = socket;
-    var player = Player(socket.id);
+    let player = Player(socket.id);
     playerList[socket.id] = player;
 
-    //If a player disconnects we need to delete player from game canvas
     socket.on("disconnect", function() {
         delete socketList[socket.id];
         delete playerList[socket.id];
@@ -124,13 +111,17 @@ io.sockets.on("connection", function(socket) {
             player.left = data.state;
         }
     });
+
+    socket.on("skinChange", function(data) {
+        player.skin = data;
+    });
 });
 
 setInterval(function() {
-    var package = [];
+    let package = [];
     for (var i in playerList) {
-        var player = playerList[i];
-        var socket = socketList[i];
+        let player = playerList[i];
+        let socket = socketList[i];
         player.movement();
         if (
             gameInstance.map[Math.floor(player.y / 40)][
@@ -165,14 +156,13 @@ setInterval(function() {
         package.push({
             x: player.x,
             y: player.y,
-            number: player.number,
             name: player.name,
             skin: player.skin,
             point: player.point
         });
     }
     for (var i in socketList) {
-        var socket = socketList[i];
+        let socket = socketList[i];
         socket.emit("newPositions", package);
         socket.emit("map", gameInstance.map);
     }
